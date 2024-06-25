@@ -218,4 +218,25 @@ class Reflection {
 
 		return \array_values( \array_unique( $traits ) );
 	}
+
+    /**
+     * Get the inheritance chain for a class.
+     *
+     * @template T
+     *
+     * @param  class-string<T>|T $target    The class to get the inheritance chain for.
+     * @param  bool              $inclusive Whether to include the target class in the chain.
+     * @return array<class-string>
+     */
+    public static function get_inheritance_chain( string|object $target, bool $inclusive = false ): array {
+        $refl  = static::get_reflector( $target );
+        $chain = $inclusive ? array( $refl->getName() ) : array();
+
+        while ( $refl->getParentClass() ) {
+            $refl    = $refl->getParentClass();
+            $chain[] = $refl->getName();
+        }
+
+        return $chain;
+    }
 }
