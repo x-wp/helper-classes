@@ -20,17 +20,21 @@ class Reflection {
     /**
      * Get a reflector for the target.
      *
-     * @param  mixed $target The target to get a reflector for.
-     * @return ReflectionClass|ReflectionMethod|ReflectionFunction
+     * @template T of object
+     *
+     * @param  Reflector|class-string<T>|T|callable|\Closure|array{T, string} $target The target to get a reflector for.
+     * @return ReflectionClass<T>|ReflectionMethod|ReflectionFunction
      *
      * @throws \InvalidArgumentException If the target is invalid.
      */
-    public static function get_reflector( mixed $target ): Reflector {
+    public static function get_reflector( callable|array|string|object $target ): ReflectionClass|ReflectionFunction|ReflectionMethod {
         return match ( true ) {
-            $target instanceof Reflector        => $target,
-            static::is_valid_class( $target )    => new ReflectionClass( $target ),
-            static::is_valid_method( $target )   => new ReflectionMethod( ...$target ),
-            static::is_valid_function( $target ) => new ReflectionFunction( $target ),
+            $target instanceof ReflectionClass,
+            $target instanceof ReflectionMethod,
+            $target instanceof ReflectionFunction => $target,
+            static::is_valid_class( $target )     => new ReflectionClass( $target ),
+            static::is_valid_method( $target )    => new ReflectionMethod( ...$target ),
+            static::is_valid_function( $target )  => new ReflectionFunction( $target ),
             default => throw new \InvalidArgumentException( 'Invalid target' ),
         };
     }
@@ -38,40 +42,48 @@ class Reflection {
     /**
      * Is the target callable.
      *
-     * @param  mixed $target The target to check.
+     * @template T of object
+     *
+     * @param  class-string<T>|T|callable|\Closure|array{object, string} $target The target to get a reflector for.
      * @return bool
      */
-    public static function is_callable( mixed $target ): bool {
+    public static function is_callable( callable|array|string|object $target ): bool {
         return static::is_valid_method( $target ) || static::is_valid_function( $target );
     }
 
     /**
      * Is the target a valid class.
      *
-     * @param  mixed $target The target to check.
+     * @template T of object
+     *
+     * @param  class-string<T>|T|callable|\Closure|array{object, string}|object $target The target to get a reflector for.
      * @return bool
      */
-    public static function is_valid_class( mixed $target ): bool {
-        return \is_object( $target ) || \class_exists( $target );
+    public static function is_valid_class( callable|array|string|object $target ): bool {
+        return \is_object( $target ) || ( \is_string( $target ) && \class_exists( $target ) );
     }
 
     /**
      * Is the target a valid method.
      *
-     * @param  mixed $target The target to check.
+     * @template T of object
+     *
+     * @param  class-string<T>|T|callable|\Closure|array{object, string} $target The target to get a reflector for.
      * @return bool
      */
-    public static function is_valid_method( mixed $target ): bool {
+    public static function is_valid_method( callable|array|string|object $target ): bool {
         return \is_array( $target ) && \is_callable( $target );
     }
 
     /**
      * Is the target a valid function.
      *
-     * @param  mixed $target The target to check.
+     * @template T of object
+     *
+     * @param  class-string<T>|T|callable|\Closure|array{object, string} $target The target to get a reflector for.
      * @return bool
      */
-    public static function is_valid_function( mixed $target ): bool {
+    public static function is_valid_function( callable|array|string|object $target ): bool {
         return \is_string( $target ) && ( \function_exists( $target ) || \is_callable( $target ) );
     }
 
@@ -92,14 +104,14 @@ class Reflection {
     /**
      * Get decorators for a target
      *
-     * @template T
-     * @param  Reflector|mixed $target    The target to get decorators for.
-     * @param  class-string<T> $decorator The decorator to get.
-     * @param  int|null        $flags     Flags to pass to getAttributes.
-     * @return array<T>
+     * @template T of object
+     * @param  Reflector|class-string<T>|T|callable|\Closure|array{T, string} $target The target to get decorators for.
+     * @param  class-string<T>                                                $decorator The decorator to get.
+     * @param  int|null                                                       $flags     Flags to pass to getAttributes.
+     * @return ReflectionAttribute<T>[]
      */
     public static function get_attributes(
-        mixed $target,
+        callable|array|string|object $target,
         string $decorator,
         ?int $flags = ReflectionAttribute::IS_INSTANCEOF,
 	): array {
@@ -110,14 +122,14 @@ class Reflection {
     /**
      * Get decorators for a target
      *
-     * @template T
-     * @param  Reflector|mixed $target    The target to get decorators for.
-     * @param  class-string<T> $decorator The decorator to get.
-     * @param  int|null        $flags     Flags to pass to getAttributes.
+     * @template T of object
+     * @param  Reflector|class-string<T>|T|callable|\Closure|array{T, string} $target The target to get decorators for.
+     * @param  class-string<T>                                                $decorator The decorator to get.
+     * @param  int|null                                                       $flags     Flags to pass to getAttributes.
      * @return array<T>
      */
     public static function get_decorators(
-        mixed $target,
+        callable|array|string|object $target,
         string $decorator,
         ?int $flags = ReflectionAttribute::IS_INSTANCEOF,
     ): array {
@@ -130,14 +142,14 @@ class Reflection {
     /**
      * Get decorators for a target class, and its parent classes.
      *
-     * @template T
-     * @param  Reflector|mixed $target    The target to get decorators for.
-     * @param  class-string<T> $decorator The decorator to get.
-     * @param  int|null        $flags     Flags to pass to getAttributes.
+     * @template T of object
+     * @param  Reflector|class-string<T>|T|callable|\Closure|array{T, string} $target The target to get decorators for.
+     * @param  class-string<T>                                                $decorator The decorator to get.
+     * @param  int|null                                                       $flags     Flags to pass to getAttributes.
      * @return array<T>
      */
     public static function get_decorators_deep(
-        mixed $target,
+        callable|array|string|object $target,
         string $decorator,
         ?int $flags = ReflectionAttribute::IS_INSTANCEOF,
     ): array {
@@ -160,12 +172,14 @@ class Reflection {
     /**
      * Get a **SINGLE** attribute for a target
      *
-     * @template T
+     * @template T of object
+     * @template K of int
+     *
      * @param  Reflector|mixed $target    The target to get decorators for.
      * @param  class-string<T> $decorator The decorator to get.
      * @param  int|null        $flags     Flags to pass to getAttributes.
-     * @param  int             $index     The index of the decorator to get.
-     * @return T|null
+     * @param  K               $index     The index of the decorator to get.
+     * @return ReflectionAttribute<T>|null
      */
     public static function get_attribute(
         mixed $target,
@@ -179,7 +193,7 @@ class Reflection {
     /**
      * Get a **SINGLE** decorator for a target
      *
-     * @template T
+     * @template T of object
      * @param  Reflector|mixed $target    The target to get decorators for.
      * @param  class-string<T> $decorator The decorator to get.
      * @param  int|null        $flags     Flags to pass to getAttributes.
@@ -202,7 +216,7 @@ class Reflection {
      *
      * @param  string|object $target Class or object to get the traits for.
      * @param  bool          $autoload        Whether to allow this function to load the class automatically through the __autoload() magic method.
-     * @return array                          Array of traits.
+     * @return array<class-string>            Array of traits.
      */
 	public static function class_uses_deep( string|object $target, bool $autoload = true ) {
 		$traits = array();
@@ -222,7 +236,7 @@ class Reflection {
     /**
      * Get the inheritance chain for a class.
      *
-     * @template T
+     * @template T of object
      *
      * @param  class-string<T>|T $target    The class to get the inheritance chain for.
      * @param  bool              $inclusive Whether to include the target class in the chain.
