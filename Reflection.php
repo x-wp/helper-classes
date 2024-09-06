@@ -123,13 +123,13 @@ class Reflection {
      * Get decorators for a target
      *
      * @template T of object
-     * @param  Reflector|class-string<T>|T|callable|\Closure|array{T, string} $target The target to get decorators for.
-     * @param  class-string<T>                                                $decorator The decorator to get.
-     * @param  int|null                                                       $flags     Flags to pass to getAttributes.
-     * @return array<T>
+     * @param  Reflector|mixed $target    The target to get decorators for.
+     * @param  class-string<T> $decorator The decorator to get.
+     * @param  int|null        $flags     Flags to pass to getAttributes.
+     * @return array<int,T>
      */
     public static function get_decorators(
-        callable|array|string|object $target,
+        mixed $target,
         string $decorator,
         ?int $flags = ReflectionAttribute::IS_INSTANCEOF,
     ): array {
@@ -143,13 +143,13 @@ class Reflection {
      * Get decorators for a target class, and its parent classes.
      *
      * @template T of object
-     * @param  Reflector|class-string<T>|T|callable|\Closure|array{T, string} $target The target to get decorators for.
-     * @param  class-string<T>                                                $decorator The decorator to get.
-     * @param  int|null                                                       $flags     Flags to pass to getAttributes.
-     * @return array<T>
+     * @param  Reflector|mixed $target The target to get decorators for.
+     * @param  class-string<T> $decorator The decorator to get.
+     * @param  int|null        $flags     Flags to pass to getAttributes.
+     * @return array<int,T>
      */
     public static function get_decorators_deep(
-        callable|array|string|object $target,
+        mixed $target,
         string $decorator,
         ?int $flags = ReflectionAttribute::IS_INSTANCEOF,
     ): array {
