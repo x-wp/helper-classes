@@ -18,6 +18,22 @@ use Reflector;
  */
 class Reflection {
     /**
+     * Get the class name for a target.
+     *
+     * @param  string|object $target The target to get the class name for.
+     * @return string
+     */
+    private static function get_classname( string|object $target ): string {
+        if ( \is_string( $target ) ) {
+            return $target;
+        }
+
+        return $target instanceof ReflectionClass
+            ? $target->getName()
+            : $target::class;
+    }
+
+    /**
      * Get a reflector for the target.
      *
      * @template T of object
@@ -96,7 +112,7 @@ class Reflection {
      * @return bool
      */
     public static function class_implements( string|object $thing, string $iname, bool $autoload = true ): bool {
-        $cname = \is_object( $thing ) ? $thing::class : $thing;
+        $cname = static::get_classname( $thing );
 
         return \class_exists( $cname ) && \in_array( $iname, \class_implements( $thing, $autoload ), true );
     }
@@ -212,25 +228,37 @@ class Reflection {
     }
 
     /**
+     * Get traits used by a class.
+     *
+     * @param  string|object $target   The class to get the traits for.
+     * @param  bool          $autoload Whether to allow this function to load the class automatically through the __autoload() magic method.
+     * @return array<class-string,class-string>
+     */
+    public static function class_uses( string|object $target, bool $autoload = true ): array {
+        return \array_reduce(
+            \class_uses( $target, $autoload ),
+            static fn( $ts, $t ) => $ts + array( $t => $t ) + \class_uses( $t, $autoload ),
+            array(),
+        );
+    }
+
+    /**
      * Get all the traits used by a class.
      *
      * @param  string|object $target Class or object to get the traits for.
      * @param  bool          $autoload        Whether to allow this function to load the class automatically through the __autoload() magic method.
-     * @return array<class-string>            Array of traits.
+     * @return array<class-string,class-string>
      */
 	public static function class_uses_deep( string|object $target, bool $autoload = true ) {
-		$traits = array();
+        $target = static::get_classname( $target );
+        $traits = array();
 
-		do {
-			$traits = \array_merge( \class_uses( $target, $autoload ), $traits );
-            $target = \get_parent_class( $target );
-		} while ( $target );
+        do {
+            $traits += static::class_uses( $target, $autoload );
+            $target  = \get_parent_class( $target );
+        } while ( $target );
 
-		foreach ( $traits as $trait ) {
-			$traits = \array_merge( \class_uses( $trait, $autoload ), $traits );
-		}
-
-		return \array_values( \array_unique( $traits ) );
+        return $traits;
 	}
 
     /**
@@ -238,17 +266,16 @@ class Reflection {
      *
      * @template T of object
      *
-     * @param  class-string<T>|T $target    The class to get the inheritance chain for.
-     * @param  bool              $inclusive Whether to include the target class in the chain.
+     * @param  class-string<T>|ReflectionClass<T>|T $target    The class to get the inheritance chain for.
+     * @param  bool                                 $inclusive Whether to include the target class in the chain.
      * @return array<class-string>
      */
     public static function get_inheritance_chain( string|object $target, bool $inclusive = false ): array {
-        $refl  = static::get_reflector( $target );
-        $chain = $inclusive ? array( $refl->getName() ) : array();
+        $target = static::get_classname( $target );
+        $chain  = $inclusive ? array( $target ) : array();
 
-        while ( $refl->getParentClass() ) {
-            $refl    = $refl->getParentClass();
-            $chain[] = $refl->getName();
+        while ( $target = \get_parent_class( $target ) ) {
+            $chain[] = $target;
         }
 
         return $chain;
