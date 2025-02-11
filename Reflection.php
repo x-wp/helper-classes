@@ -23,7 +23,7 @@ class Reflection {
      * @param  string|object $target The target to get the class name for.
      * @return string
      */
-    private static function get_classname( string|object $target ): string {
+    public static function get_classname( string|object $target ): string {
         if ( \is_string( $target ) ) {
             return $target;
         }
@@ -274,6 +274,7 @@ class Reflection {
         $target = static::get_classname( $target );
         $chain  = $inclusive ? array( $target ) : array();
 
+        //phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
         while ( $target = \get_parent_class( $target ) ) {
             $chain[] = $target;
         }

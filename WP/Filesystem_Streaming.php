@@ -11,7 +11,7 @@
 /**
  * Custom WP filesystem class
  */
-class WP_Filesystem_Streaming extends WP_Filesystem_Base {
+class WP_Filesystem_Streaming extends WP_Filesystem_Direct {
     /**
      * Current file path
      *
